@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Databases / runtime data
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+
+# Local model/runtime artifacts
+models/
+runtime/
+
+# Security range generated evidence
+artifacts/
+evidence/

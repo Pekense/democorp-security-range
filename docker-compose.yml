@@ -1,0 +1,107 @@
+services:
+  backend-api:
+    image: python:3.12-slim
+    container_name: democorp-backend-api
+    command: ["sh", "-c", "echo 'backend-api placeholder'; sleep infinity"]
+    working_dir: /app
+    volumes:
+      - ./services/backend-api:/app
+    networks:
+      - democorp_internal
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  mcp-server:
+    image: python:3.12-slim
+    container_name: democorp-mcp-server
+    command: ["sh", "-c", "echo 'mcp-server placeholder'; sleep infinity"]
+    working_dir: /app
+    volumes:
+      - ./services/mcp-server:/app
+    networks:
+      - democorp_internal
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+
+  finance-agent:
+    image: python:3.12-slim
+    container_name: democorp-finance-agent
+    command: ["sh", "-c", "echo 'finance-agent placeholder'; sleep infinity"]
+    working_dir: /app
+    volumes:
+      - ./services/finance-agent:/app
+    networks:
+      - democorp_internal
+      - democorp_audit
+    ports:
+      - "8002:8002"
+    restart: unless-stopped
+
+  customer-chatbot:
+    image: python:3.12-slim
+    container_name: democorp-customer-chatbot
+    command: ["sh", "-c", "echo 'customer-chatbot placeholder'; sleep infinity"]
+    working_dir: /app
+    volumes:
+      - ./services/customer-chatbot:/app
+    networks:
+      - democorp_internal
+      - democorp_audit
+    ports:
+      - "8003:8003"
+    restart: unless-stopped
+
+  rag-assistant:
+    image: python:3.12-slim
+    container_name: democorp-rag-assistant
+    command: ["sh", "-c", "echo 'rag-assistant placeholder'; sleep infinity"]
+    working_dir: /app
+    volumes:
+      - ./services/rag-assistant:/app
+    networks:
+      - democorp_internal
+      - democorp_audit
+    ports:
+      - "8004:8004"
+    restart: unless-stopped
+
+  llm-application:
+    image: python:3.12-slim
+    container_name: democorp-llm-application
+    command: ["sh", "-c", "echo 'llm-application placeholder'; sleep infinity"]
+    working_dir: /app
+    volumes:
+      - ./services/llm-application:/app
+    networks:
+      - democorp_internal
+      - democorp_audit
+    ports:
+      - "8005:8005"
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: democorp-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - democorp_internal
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+
+networks:
+  democorp_internal:
+    name: democorp_internal
+    driver: bridge
+    internal: true
+
+  democorp_audit:
+    name: democorp_audit
+    driver: bridge
+
+volumes:
+  ollama_data:
+    name: democorp_ollama_data
