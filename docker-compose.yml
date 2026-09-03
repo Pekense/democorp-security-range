@@ -1,15 +1,16 @@
 services:
   backend-api:
-    image: python:3.12-slim
+    build:
+      context: ./services/backend-api
     container_name: democorp-backend-api
-    command: ["sh", "-c", "echo 'backend-api placeholder'; sleep infinity"]
-    working_dir: /app
-    volumes:
-      - ./services/backend-api:/app
     networks:
       - democorp_internal
+      - democorp_audit
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data/customers:/data/customers:ro
+      - ./data/orders:/data/orders:ro
     restart: unless-stopped
 
   mcp-server:

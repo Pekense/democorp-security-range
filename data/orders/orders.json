@@ -1,0 +1,18 @@
+[
+  {
+    "order_id": "ORD-1001",
+    "customer_id": "CUST-001",
+    "product_name": "Enterprise Security Assessment",
+    "amount": 2500.0,
+    "currency": "EUR",
+    "status": "completed"
+  },
+  {
+    "order_id": "ORD-1002",
+    "customer_id": "CUST-002",
+    "product_name": "Security Awareness Training",
+    "amount": 1200.0,
+    "currency": "EUR",
+    "status": "pending"
+  }
+]
