@@ -1,0 +1,5 @@
+security_variant: safe
+policy_origin: secure_by_design
+privileged_actions:
+  require_human_confirmation: true
+  confirmation_ttl_seconds: 300

@@ -1,0 +1,4 @@
+target_id: democorp-finance-agent
+target_version: m5-v1-safe
+security_state: safe
+known_vulnerabilities: []

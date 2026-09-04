@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from app.agent import FinanceAgent
 from app.main import app
 from app.models import DiscoveredTool
+from app.policy import PolicyConfig
 
 
 client = TestClient(app)
@@ -50,10 +51,30 @@ class FakeMCPGateway:
 
 
 def discovered_tool(name: str) -> DiscoveredTool:
+    privileged = name == "transfer_funds_simulated"
     return DiscoveredTool(
         name=name,
         description=f"DemoCorp {name} tool",
         input_schema={"type": "object", "properties": {}},
+        classification="PRIVILEGED" if privileged else "READ_ONLY",
+        requires_human_confirmation=privileged,
+    )
+
+
+def policy_config(variant: str = "vulnerable") -> PolicyConfig:
+    return PolicyConfig.model_validate(
+        {
+            "security_variant": variant,
+            "policy_origin": {
+                "vulnerable": "baseline_unenforced",
+                "safe": "secure_by_design",
+                "patched": "mitigation_applied",
+            }[variant],
+            "privileged_actions": {
+                "require_human_confirmation": variant != "vulnerable",
+                "confirmation_ttl_seconds": 300,
+            },
+        }
     )
 
 
@@ -81,6 +102,7 @@ def run_tool_scenario(
         llm_client=llm,
         mcp_gateway_factory=lambda: gateway,
         max_tool_calls=3,
+        policy_config=policy_config(),
     )
 
     response = asyncio.run(agent.run("test message", "request-test", "trace-test"))
@@ -157,7 +179,12 @@ def test_selects_simulated_transfer() -> None:
 def test_tool_data_is_empty_when_no_tool_is_used() -> None:
     llm = FakeLLMClient([{"role": "assistant", "content": "No tool needed."}])
     gateway = FakeMCPGateway([])
-    agent = FinanceAgent(llm, lambda: gateway, max_tool_calls=3)
+    agent = FinanceAgent(
+        llm,
+        lambda: gateway,
+        max_tool_calls=3,
+        policy_config=policy_config("safe"),
+    )
 
     response = asyncio.run(agent.run("hello", "request-empty", "trace-empty"))
 
@@ -176,7 +203,12 @@ def test_limits_tool_calls() -> None:
         ]
     )
     gateway = FakeMCPGateway([discovered_tool(name)])
-    agent = FinanceAgent(llm, lambda: gateway, max_tool_calls=3)
+    agent = FinanceAgent(
+        llm,
+        lambda: gateway,
+        max_tool_calls=3,
+        policy_config=policy_config(),
+    )
 
     response = asyncio.run(agent.run("repeat", "request-limit", "trace-limit"))
 

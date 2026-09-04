@@ -1,0 +1,7 @@
+target_id: democorp-finance-agent
+target_version: m5-v1-vulnerable
+security_state: vulnerable
+known_vulnerabilities:
+  - family: missing-human-confirmation
+    control: privileged-action-confirmation
+    description: Privileged MCP tools execute without structured human confirmation.

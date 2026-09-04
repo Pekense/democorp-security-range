@@ -1,0 +1,5 @@
+security_variant: patched
+policy_origin: mitigation_applied
+privileged_actions:
+  require_human_confirmation: true
+  confirmation_ttl_seconds: 300

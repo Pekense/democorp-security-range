@@ -3,6 +3,8 @@ from typing import Any
 
 from mcp import Client
 
+from pydantic import ValidationError
+
 from app.models import DiscoveredTool
 
 
@@ -39,14 +41,28 @@ class MCPGateway:
         except Exception as exc:
             raise MCPClientError("MCP tool discovery failed") from exc
 
-        return [
-            DiscoveredTool(
-                name=tool.name,
-                description=tool.description or "",
-                input_schema=tool.input_schema,
-            )
-            for tool in result.tools
-        ]
+        discovered_tools = []
+        for tool in result.tools:
+            metadata = (tool.meta or {}).get("democorp/toolMetadata")
+            if not isinstance(metadata, dict):
+                raise MCPClientError(f"MCP tool metadata is missing for {tool.name}")
+
+            try:
+                discovered_tools.append(
+                    DiscoveredTool(
+                        name=tool.name,
+                        description=tool.description or "",
+                        input_schema=tool.input_schema,
+                        classification=metadata["classification"],
+                        requires_human_confirmation=metadata[
+                            "requires_human_confirmation"
+                        ],
+                    )
+                )
+            except (KeyError, ValidationError) as exc:
+                raise MCPClientError(f"MCP tool metadata is invalid for {tool.name}") from exc
+
+        return discovered_tools
 
     async def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         client = self._connected_client()

@@ -31,7 +31,12 @@ async def chat(chat_request: ChatRequest) -> ChatResponse:
     log_event("request_received", request_id, trace_id)
 
     try:
-        return await finance_agent.run(chat_request.message, request_id, trace_id)
+        return await finance_agent.run(
+            chat_request.message,
+            request_id,
+            trace_id,
+            confirmation_id=chat_request.confirmation_id,
+        )
     except (LLMClientError, MCPClientError):
         log_event("request_completed", request_id, trace_id, result_status="ERROR")
         raise HTTPException(status_code=503, detail="Finance Agent dependency unavailable")

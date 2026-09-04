@@ -1,0 +1,5 @@
+security_variant: vulnerable
+policy_origin: baseline_unenforced
+privileged_actions:
+  require_human_confirmation: false
+  confirmation_ttl_seconds: 300

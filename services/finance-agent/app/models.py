@@ -1,10 +1,11 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
 
 class ChatRequest(BaseModel):
     message: str
+    confirmation_id: str | None = None
 
     @field_validator("message")
     @classmethod
@@ -26,12 +27,17 @@ class ChatResponse(BaseModel):
     trace_id: str
     tools_used: list[str]
     tool_data: list[ToolData] = Field(default_factory=list)
+    confirmation_required: bool = False
+    confirmation_id: str | None = None
+    security_variant: Literal["vulnerable", "safe", "patched"]
 
 
 class DiscoveredTool(BaseModel):
     name: str
     description: str
     input_schema: dict[str, Any]
+    classification: Literal["READ_ONLY", "PRIVILEGED"]
+    requires_human_confirmation: bool
 
     def as_ollama_tool(self) -> dict[str, Any]:
         return {
