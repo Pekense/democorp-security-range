@@ -32,17 +32,24 @@ services:
     restart: unless-stopped
 
   finance-agent:
-    image: python:3.12-slim
+    build:
+      context: ./services/finance-agent
     container_name: democorp-finance-agent
-    command: ["sh", "-c", "echo 'finance-agent placeholder'; sleep infinity"]
-    working_dir: /app
+    depends_on:
+      - mcp-server
+      - ollama
+    environment:
+      MAX_TOOL_CALLS: "3"
+      MCP_SERVER_URL: http://mcp-server:8001/mcp
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: qwen2.5:7b
     volumes:
-      - ./services/finance-agent:/app
+      - ./tests:/tests:ro
     networks:
       - democorp_internal
       - democorp_audit
     ports:
-      - "8002:8002"
+      - "127.0.0.1:8002:8002"
     restart: unless-stopped
 
   customer-chatbot:
