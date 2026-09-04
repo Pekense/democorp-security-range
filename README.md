@@ -508,6 +508,65 @@ docker compose down
 
 ---
 
+## DemoCorp Portal
+
+`services/democorp-portal` is the Enterprise Security Operations Console: a Next.js (TypeScript, App
+Router) web UI for operating and demonstrating DemoCorp. The Portal belongs to DemoCorp — it is not
+part of AgentSec, does not import AgentSec, and never reads `ground-truth/`.
+
+Start it together with the rest of the stack:
+
+```bash
+docker compose up -d --build democorp-portal
+```
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+### Architecture
+
+```text
+Browser
+   |
+   v
+DemoCorp Portal (Next.js Route Handlers)
+   |
+   +--> Backend API   (health)
+   +--> MCP Server    (health)
+   +--> Finance Agent (chat, tools, security-variant, confirmations, health)
+   +--> Ollama        (health only)
+```
+
+The browser only ever talks to the Portal's own `/api/*` routes; it never learns Docker-internal
+hostnames or ports. All calls to `backend-api`, `mcp-server`, `finance-agent`, and `ollama` are made
+server-side, from Next.js Route Handlers (`app/api/*`) and Server Components, through `lib/api.ts`.
+
+### Dependencies
+
+* Node.js 22, Next.js 16, React 19, TypeScript — see `services/democorp-portal/package.json`.
+* No external UI framework (no Tailwind, no component library) — a small hand-written CSS design
+  system in `app/globals.css` plus CSS Modules per component.
+
+### Local development
+
+```bash
+cd services/democorp-portal
+npm install
+npm run dev
+```
+
+### Tests
+
+```bash
+cd services/democorp-portal
+npm run test
+```
+
+---
+
 ## Current Project Status
 
 Current milestone:

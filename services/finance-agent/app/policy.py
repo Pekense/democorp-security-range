@@ -86,6 +86,15 @@ class ConfirmationStore:
             self._confirmations[confirmation.confirmation_id] = confirmation
         return confirmation
 
+    async def peek(self, confirmation_id: str) -> PendingConfirmation | None:
+        async with self._lock:
+            confirmation = self._confirmations.get(confirmation_id)
+            if confirmation is None or confirmation.status is not ConfirmationStatus.PENDING:
+                return None
+            if self.clock() >= confirmation.expires_at:
+                return None
+            return deepcopy(confirmation)
+
     async def consume(self, confirmation_id: str) -> PendingConfirmation | None:
         async with self._lock:
             confirmation = self._confirmations.get(confirmation_id)

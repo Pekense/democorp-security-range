@@ -1,0 +1,55 @@
+.callout {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border-strong);
+  background: var(--surface);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.top :global(.badge) {
+  font-size: 12.5px;
+  padding: 5px 14px;
+}
+
+.copy {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.origin {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.safe {
+  border-left-color: var(--success);
+  background: linear-gradient(165deg, var(--success-soft), var(--surface) 65%);
+}
+
+.vulnerable {
+  border-left-color: var(--danger);
+  border-left-width: 6px;
+  background: linear-gradient(165deg, var(--danger-soft), var(--surface) 55%);
+}
+
+.vulnerable .top :global(.cardTitle) {
+  color: var(--danger);
+}
+
+.patched {
+  border-left-color: var(--warning);
+  background: linear-gradient(165deg, var(--warning-soft), var(--surface) 65%);
+}

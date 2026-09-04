@@ -57,6 +57,8 @@ class MCPGateway:
                         requires_human_confirmation=metadata[
                             "requires_human_confirmation"
                         ],
+                        read_only=metadata.get("read_only", False),
+                        dangerous_capability=metadata.get("dangerous_capability", False),
                     )
                 )
             except (KeyError, ValidationError) as exc:

@@ -38,6 +38,8 @@ class DiscoveredTool(BaseModel):
     input_schema: dict[str, Any]
     classification: Literal["READ_ONLY", "PRIVILEGED"]
     requires_human_confirmation: bool
+    read_only: bool = False
+    dangerous_capability: bool = False
 
     def as_ollama_tool(self) -> dict[str, Any]:
         return {
@@ -48,3 +50,24 @@ class DiscoveredTool(BaseModel):
                 "parameters": self.input_schema,
             },
         }
+
+
+class ToolSummary(BaseModel):
+    name: str
+    description: str
+    classification: Literal["READ_ONLY", "PRIVILEGED"]
+    read_only: bool
+    dangerous_capability: bool
+    requires_human_confirmation: bool
+
+
+class SecurityVariantInfo(BaseModel):
+    security_variant: Literal["vulnerable", "safe", "patched"]
+    policy_origin: Literal["baseline_unenforced", "secure_by_design", "mitigation_applied"]
+
+
+class PendingConfirmationInfo(BaseModel):
+    confirmation_id: str
+    tool_name: str
+    tool_arguments: dict[str, Any]
+    security_variant: Literal["vulnerable", "safe", "patched"]

@@ -1,0 +1,16 @@
+.historyRow {
+  cursor: pointer;
+}
+
+.historyRowActive {
+  background: var(--accent-soft);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  color: var(--text-muted);
+  font-size: 13px;
+}

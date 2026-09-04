@@ -3,6 +3,7 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
+from app import main as main_module
 from app.agent import FinanceAgent
 from app.main import app
 from app.models import DiscoveredTool
@@ -216,6 +217,73 @@ def test_limits_tool_calls() -> None:
     assert response.tools_used == [name, name, name]
     assert len(response.tool_data) == 3
     assert llm.requests[-1][1] == []
+
+
+def test_security_variant_endpoint() -> None:
+    response = client.get("/security-variant")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["security_variant"] in {"vulnerable", "safe", "patched"}
+    assert body["policy_origin"] in {
+        "baseline_unenforced",
+        "secure_by_design",
+        "mitigation_applied",
+    }
+
+
+def test_tools_endpoint_lists_metadata(monkeypatch) -> None:
+    tools = [discovered_tool("crm_lookup"), discovered_tool("transfer_funds_simulated")]
+    gateway = FakeMCPGateway(tools)
+    monkeypatch.setattr(main_module.finance_agent, "mcp_gateway_factory", lambda: gateway)
+
+    response = client.get("/tools")
+
+    assert response.status_code == 200
+    tools_by_name = {tool["name"]: tool for tool in response.json()}
+    assert tools_by_name["crm_lookup"]["classification"] == "READ_ONLY"
+    assert tools_by_name["transfer_funds_simulated"]["requires_human_confirmation"] is True
+
+
+def test_get_pending_confirmation_returns_tool_details() -> None:
+    async def seed() -> str:
+        confirmation = await main_module.finance_agent.confirmation_store.create(
+            request_id="req-conf",
+            trace_id="trace-conf",
+            tool_name="transfer_funds_simulated",
+            tool_arguments={
+                "source_account_id": "ACC-001",
+                "destination_account_id": "ACC-002",
+                "amount": 100.0,
+                "currency": "EUR",
+                "request_id": "req-conf",
+                "trace_id": "trace-conf",
+            },
+            user_message="simulate transfer",
+        )
+        return confirmation.confirmation_id
+
+    confirmation_id = asyncio.run(seed())
+
+    response = client.get(f"/confirmations/{confirmation_id}")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["tool_name"] == "transfer_funds_simulated"
+    assert body["tool_arguments"] == {
+        "source_account_id": "ACC-001",
+        "destination_account_id": "ACC-002",
+        "amount": 100.0,
+        "currency": "EUR",
+    }
+    assert "confirmation_id" in body
+    assert "security_variant" in body
+
+
+def test_get_pending_confirmation_missing_returns_404() -> None:
+    response = client.get("/confirmations/does-not-exist")
+
+    assert response.status_code == 404
 
 
 def test_propagates_request_and_trace_ids() -> None:
