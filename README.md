@@ -1,657 +1,138 @@
 # DemoCorp Enterprise Security Range
 
-DemoCorp Enterprise Security Range is a fictional, realistic, and fully controlled enterprise environment designed for security testing of AI-enabled applications.
+A fictional enterprise laboratory for testing AI agents against realistic business APIs, MCP tools and human-confirmation policies. All business data and financial operations are simulated.
 
-It is intentionally built as an independent target system that can later be audited by external security tools such as AgentSec.
+**Status:** the Backend API, MCP Server, Finance Agent, operations portal and controlled confirmation variants are implemented. Customer Chatbot, RAG Assistant and standalone LLM Application remain placeholders.
 
-DemoCorp does not depend on AgentSec and does not contain knowledge of AgentSec internals, rules, findings, or evaluation logic.
+DemoCorp is an independent assessment target. It does not import AgentSec or depend on an auditor's rules. Ground truth is reserved for tests and evaluation, not runtime decisions.
 
----
+## What it demonstrates
 
-## Purpose
+- Python / FastAPI business services and structured data models.
+- MCP tool discovery and execution integrated with an Ollama-backed agent.
+- Tool-call limits and human-in-the-loop controls for privileged simulated actions.
+- SAFE, VULNERABLE and PATCHED behaviors with corresponding security tests.
+- A Next.js / TypeScript operations console using server-side API calls.
+- Docker service boundaries, correlation IDs and evaluation ground truth.
 
-The objective of DemoCorp is to provide a coherent enterprise environment containing multiple AI-enabled applications and business services.
+## Implemented services
 
-The environment will eventually include:
+| Component | Current capability |
+| --- | --- |
+| Backend API | Health, customer lookup and order lookup using fictional JSON data |
+| MCP Server | `crm_lookup`, `get_order`, `transfer_funds_simulated`; tool risk metadata |
+| Finance Agent | Ollama tool calling, MCP integration, call limits and confirmation policy |
+| Operations portal | Service health, agent conversation, tool metadata and pending confirmations |
+| Ollama | Local inference, configured for `qwen2.5:7b` |
+| Security fixtures | Missing-confirmation scenario, variants and expected evaluation results |
 
-* Backend REST API
-* MCP Server
-* Finance AI Agent
-* Customer Chatbot
-* RAG Assistant
-* LLM Application
-* Local LLM inference through Ollama
+Refunds, notifications, document search and a full RAG pipeline are future work, not current features.
 
-The project is not intended to be a collection of isolated mini-labs.
+## Architecture and trust boundaries
 
-All services belong to the same fictional company and share customers, identities, orders, documents, accounts, and business processes.
-
----
-
-## Core Principle
-
-DemoCorp is the target.
-
-AgentSec or any other external system is the auditor.
-
-The intended relationship is:
-
-```text
-External Auditor
-       |
-       v
-   DemoCorp
+```mermaid
+flowchart TD
+    Browser["Local browser"] --> Portal["Operations portal"]
+    Portal --> Agent["Finance Agent"]
+    Agent --> MCP["MCP Server"]
+    Agent --> Ollama["Ollama"]
+    MCP --> API["Backend API"]
+    API --> Data["Fictional customers and orders"]
 ```
 
-Never:
+The portal proxies calls through its own server routes. Finance Agent uses MCP to obtain business capabilities and Ollama for inference.
 
-```text
-DemoCorp
-   |
-   v
-AgentSec internals
-```
+Docker Compose defines `democorp_internal` (`internal: true`), `democorp_audit` and `democorp_mcp_dev`. Backend API and the portal also join the audit network; network names do not imply authentication or complete isolation. See [trust boundaries](docs/trust-boundaries/trust-boundaries.md).
 
-DemoCorp must remain functional even if AgentSec does not exist.
+## Run the implemented stack
 
----
-
-## Current Architecture
-
-```text
-                         External Auditor
-                              |
-                       democorp_audit
-                              |
-          -----------------------------------------
-          |                  |                    |
-          v                  v                    v
-   Customer Chatbot     Finance Agent        RAG Assistant
-          |                  |                    |
-          |                  |                Vector Store
-          |                  |
-          -------------------+--------------------
-                             |
-                    democorp_internal
-                             |
-                         MCP Server
-                             |
-                        Backend API
-                             |
-                     DemoCorp Business Data
-                             |
-                           Ollama
-```
-
-The architecture uses two Docker trust zones.
-
----
-
-## Docker Networks
-
-### `democorp_audit`
-
-Represents the externally observable attack surface.
-
-Initial services attached to this network:
-
-* Finance Agent
-* Customer Chatbot
-* RAG Assistant
-* LLM Application
-
-An external auditor may later connect to this network without receiving direct access to DemoCorp internal infrastructure.
-
----
-
-### `democorp_internal`
-
-Private DemoCorp service network.
-
-Configured as:
-
-```yaml
-internal: true
-```
-
-Initial internal services include:
-
-* Backend API
-* MCP Server
-* Ollama
-
-Application-facing services may also connect to this network when they need to consume internal capabilities.
-
-The purpose is to separate:
-
-```text
-auditable surface
-```
-
-from:
-
-```text
-internal enterprise infrastructure
-```
-
----
-
-## Services
-
-### Backend API
-
-Future authoritative source for DemoCorp business operations.
-
-Planned capabilities include:
-
-* customers
-* accounts
-* orders
-* refunds
-* notifications
-* documents
-* simulated transfers
-
----
-
-### MCP Server
-
-Future tool gateway between AI applications and business capabilities.
-
-Initial tool categories:
-
-```text
-READ_ONLY
-WRITE
-PRIVILEGED
-```
-
-Example tools:
-
-```text
-crm_lookup
-get_order
-search_documents
-send_notification
-request_refund
-transfer_funds_simulated
-```
-
----
-
-### Finance Agent
-
-Future AI agent capable of requesting controlled business actions through the MCP Server.
-
-Privileged actions will always remain simulated.
-
----
-
-### Customer Chatbot
-
-Future customer-facing AI application with a restricted capability set.
-
-It must have fewer permissions than the Finance Agent.
-
----
-
-### RAG Assistant
-
-Future retrieval-augmented generation application using fictional DemoCorp corporate documents.
-
-It will later support controlled scenarios involving:
-
-* indirect prompt injection
-* poisoned documents
-* source provenance
-* trust boundaries
-* untrusted context propagation
-
----
-
-### LLM Application
-
-Future non-agentic LLM-enabled application.
-
-Its purpose is also to preserve the architectural distinction:
-
-```text
-LLM Application != Chatbot != AI Agent
-```
-
----
-
-### Ollama
-
-Local inference service.
-
-Initial model preference:
-
-```text
-qwen2.5:7b
-```
-
-No cloud LLM provider is required for the initial implementation.
-
----
-
-## Repository Structure
-
-```text
-democorp-security-range/
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-├── README.md
-│
-├── services/
-│   ├── backend-api/
-│   ├── mcp-server/
-│   ├── finance-agent/
-│   ├── customer-chatbot/
-│   ├── rag-assistant/
-│   └── llm-application/
-│
-├── shared/
-│   ├── schemas/
-│   ├── observability/
-│   └── correlation/
-│
-├── configs/
-│   ├── safe/
-│   ├── vulnerable/
-│   └── patched/
-│
-├── data/
-│   ├── customers/
-│   ├── orders/
-│   ├── documents/
-│   └── identities/
-│
-├── ground-truth/
-│   ├── targets/
-│   └── scenarios/
-│
-├── docs/
-│   ├── architecture/
-│   ├── trust-boundaries/
-│   └── security-model/
-│
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── security/
-│
-└── scripts/
-```
-
----
-
-## Security Variants
-
-Security-sensitive targets may eventually exist in three states.
-
-### VULNERABLE
-
-Contains a controlled but observable security weakness.
-
-### SAFE
-
-Implements the required security controls from the beginning.
-
-### PATCHED
-
-Represents the previously vulnerable implementation after applying a concrete mitigation.
-
-The original attack must stop working while legitimate business functionality remains available.
-
-Security states must modify real runtime behaviour.
-
-A descriptive flag such as:
-
-```text
-vulnerable=true
-```
-
-is not considered sufficient.
-
----
-
-## Ground Truth
-
-Ground truth lives under:
-
-```text
-ground-truth/
-```
-
-It exists only for:
-
-* evaluation
-* regression testing
-* benchmark validation
-* expected attack-path definition
-
-Runtime services must never read ground-truth files.
-
-Ground truth does not control application behaviour.
-
----
-
-## Observability
-
-DemoCorp will use structured runtime events.
-
-Core correlation fields:
-
-```text
-timestamp
-service
-event_type
-request_id
-trace_id
-```
-
-Security-sensitive flows may additionally contain:
-
-```text
-actor_id
-actor_type
-actor_role
-
-source_id
-source_type
-source_trust
-
-tool_name
-tool_classification
-
-authorization_decision
-human_confirmation_state
-
-result_status
-```
-
-The central correlation rule is:
-
-```text
-request_id = one service request
-
-trace_id = the complete cross-service flow
-```
-
----
-
-## Range Safety
-
-DemoCorp may contain intentionally vulnerable applications.
-
-The environment itself must remain controlled.
-
-Forbidden by default:
-
-* real financial transactions
-* real SMTP delivery
-* real banking APIs
-* cloud credentials
-* arbitrary host shell execution
-* Docker socket access
-* privileged containers
-* host network mode
-* arbitrary host filesystem access
-* remote scanning
-
-Dangerous business actions must be simulated.
-
-Example:
-
-```text
-transfer_funds_simulated(...)
-```
-
-may create a local fictional transfer record but must never move real funds.
-
----
-
-## Shared Data Model
-
-Initial business entities:
-
-```text
-Customer
-Identity
-Account
-Order
-Document
-Refund
-Notification
-SimulatedTransfer
-```
-
-Important security distinction:
-
-```text
-Customer != Identity != Authorization
-```
-
-Ownership of a business object does not automatically imply authorization to perform every action against it.
-
----
-
-## Audit Modes
-
-DemoCorp is designed to support future external evaluation.
-
-### BLACK_BOX
-
-Auditor receives only externally reachable targets and required connection information.
-
-### GREY_BOX
-
-Auditor may additionally receive declared metadata such as:
-
-* OpenAPI
-* MCP tool metadata
-* authentication model
-* declared permissions
-
-### WHITE_BOX
-
-Auditor may additionally inspect:
-
-* source code
-* configuration
-* deployment files
-* tool definitions
-
-Ground truth remains evaluation-only in all three modes.
-
----
-
-## Running the M1 Foundation
-
-Validate Docker Compose:
+Requirements: Git, Docker Engine with Docker Compose and enough memory for the chosen local model. Model execution may be slow on CPU.
 
 ```bash
+git clone https://github.com/Pekense/democorp-security-range.git
+cd democorp-security-range
 docker compose config --quiet
-```
 
-Start the environment:
-
-```bash
-docker compose up -d
-```
-
-Check services:
-
-```bash
+# Start only implemented services, excluding the three placeholder containers.
+docker compose up -d --build backend-api mcp-server finance-agent democorp-portal ollama
 docker compose ps
+
+# Download the configured local model. This requires outbound connectivity.
+docker compose exec ollama ollama pull qwen2.5:7b
 ```
 
-Check the private network:
+If the model download cannot access the network, prepare the named model in the Ollama volume through an appropriately connected local setup. Do not remove network boundaries just to bypass the problem.
+
+| Local endpoint | Purpose |
+| --- | --- |
+| `http://127.0.0.1:3000` | Operations portal |
+| `http://127.0.0.1:8000/health` | Backend health |
+| `http://127.0.0.1:8001/health` | MCP health |
+| `http://127.0.0.1:8002/health` | Finance Agent health |
 
 ```bash
-docker network inspect democorp_internal
+curl http://127.0.0.1:8002/security-variant
+curl http://127.0.0.1:8002/tools
+curl -X POST http://127.0.0.1:8002/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"Look up customer CUST-001"}'
 ```
 
-Check the audit network:
+Use the portal to inspect a privileged action and its pending confirmation. A simulated transfer never moves real funds.
+
+## Security variants
+
+| Variant | Privileged action behavior |
+| --- | --- |
+| `safe` (default) | Requires valid human confirmation |
+| `vulnerable` | Intentionally omits confirmation enforcement |
+| `patched` | Enforces confirmation as mitigation of that scenario |
+
+For an isolated, controlled demonstration:
 
 ```bash
-docker network inspect democorp_audit
+SECURITY_VARIANT=vulnerable docker compose up -d --force-recreate finance-agent
+
+# Restore the default control after the demonstration.
+SECURITY_VARIANT=safe docker compose up -d --force-recreate finance-agent
 ```
 
-Stop the environment:
+Keep this range on a trusted local machine. The confirmation scenario does not implement enterprise identity, authorization or a secure multi-user approval system. An intentionally vulnerable variant belongs only in a controlled test environment.
+
+**Deployment caveat:** current Compose publishes Ollama on `11434` without a loopback binding; placeholder services also declare `8003`–`8005` on all interfaces. Restrict these bindings to `127.0.0.1` before running on a shared/networked host. The implemented API, MCP, agent and portal host bindings already use loopback.
+
+See the [publication security review](docs/publication-security-review.md).
+
+## Tests
+
+The Python services share the package name `app`; run their suites in separate processes/environments. Backend tests expect the `/data` mounts provided by Compose. From the root of the running laboratory:
 
 ```bash
-docker compose down
+docker compose exec backend-api python -m pytest /tests/unit/test_backend_api.py
+docker compose exec mcp-server python -m pytest /tests/unit/test_mcp_server.py
+docker compose exec finance-agent python -m pytest \
+  /tests/unit/test_finance_agent.py /tests/security/test_missing_human_confirmation.py
 ```
 
----
+The Finance Agent tests use controlled fake LLM/MCP clients. They do not require an active Ollama model and do not prove a live end-to-end deployment works. To run these tests outside Docker, install the service requirements and set `FINANCE_AGENT_CONFIG_ROOT` to the repository's absolute `configs` path. Backend tests also need their data paths adjusted to the local fixture files.
 
-## DemoCorp Portal
-
-`services/democorp-portal` is the Enterprise Security Operations Console: a Next.js (TypeScript, App
-Router) web UI for operating and demonstrating DemoCorp. The Portal belongs to DemoCorp — it is not
-part of AgentSec, does not import AgentSec, and never reads `ground-truth/`.
-
-Start it together with the rest of the stack:
-
-```bash
-docker compose up -d --build democorp-portal
-```
-
-Open:
-
-```text
-http://localhost:3000
-```
-
-### Architecture
-
-```text
-Browser
-   |
-   v
-DemoCorp Portal (Next.js Route Handlers)
-   |
-   +--> Backend API   (health)
-   +--> MCP Server    (health)
-   +--> Finance Agent (chat, tools, security-variant, confirmations, health)
-   +--> Ollama        (health only)
-```
-
-The browser only ever talks to the Portal's own `/api/*` routes; it never learns Docker-internal
-hostnames or ports. All calls to `backend-api`, `mcp-server`, `finance-agent`, and `ollama` are made
-server-side, from Next.js Route Handlers (`app/api/*`) and Server Components, through `lib/api.ts`.
-
-### Dependencies
-
-* Node.js 22, Next.js 16, React 19, TypeScript — see `services/democorp-portal/package.json`.
-* No external UI framework (no Tailwind, no component library) — a small hand-written CSS design
-  system in `app/globals.css` plus CSS Modules per component.
-
-### Local development
+Portal checks:
 
 ```bash
 cd services/democorp-portal
-npm install
-npm run dev
+npm ci
+npm test
+npm run build
 ```
 
-### Tests
+## Documentation and next work
 
-```bash
-cd services/democorp-portal
-npm run test
-```
+- [Architecture](docs/architecture/architecture.md)
+- [Business data model](docs/architecture/data-model.md)
+- [Security model](docs/security-model/security-model.md)
+- [Ground truth](docs/security-model/ground-truth.md)
+- [Observability](docs/architecture/observability.md)
 
----
+Next work: implement the remaining application targets, extend enterprise scenarios and evaluate the range with an independent auditor. Broader architecture documents may describe planned capabilities; the service table above records the current implementation.
 
-## Current Project Status
-
-Current milestone:
-
-```text
-M1 — Architecture & Foundation
-```
-
-Completed foundation areas:
-
-* independent repository
-* service boundaries
-* Docker topology
-* internal network isolation
-* audit network
-* trust boundaries
-* security model
-* shared data model
-* observability and correlation model
-* ground-truth strategy
-* SAFE / VULNERABLE / PATCHED strategy
-
-Application services are currently placeholders.
-
-No full Backend API, MCP Server, Finance Agent, Chatbot, RAG Assistant, or LLM Application has been implemented yet.
-
----
-
-## Roadmap
-
-```text
-M1  Architecture & Foundation
-M2  Backend API
-M3  MCP Server
-M4  Finance AI Agent
-M5  Customer Chatbot
-M6  RAG Assistant
-M7  LLM Application
-M8  SAFE / VULNERABLE / PATCHED variants
-M9  Ground Truth + Observability implementation
-M10 Integrated Enterprise Scenarios
-M11 External Security Evaluation
-```
-
-Milestones should be completed incrementally.
-
-DemoCorp should not be built all at once.
-
----
-
-## Documentation
-
-Architecture:
-
-```text
-docs/architecture/
-```
-
-Trust boundaries:
-
-```text
-docs/trust-boundaries/
-```
-
-Security model:
-
-```text
-docs/security-model/
-```
-
-These documents define the current architectural contracts and should be updated when significant architectural decisions change.
-
----
-
-## Project Rule
-
-The fundamental rule of DemoCorp is:
-
-```text
-DemoCorp is the TARGET.
-
-The auditor is EXTERNAL.
-```
-
-The objective is to eventually be able to demonstrate:
-
-> An external security tool discovered observable weaknesses in an independent enterprise environment that did not know how it would be audited.
-
+Stop the laboratory with `docker compose down`. Preserve or delete the Ollama volume deliberately; downloading models again can be expensive.
